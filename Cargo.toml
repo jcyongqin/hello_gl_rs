@@ -1,0 +1,8 @@
+[package]
+name = "hello_gl"
+version = "0.1.0"
+authors = ["wang yongqin <wangyongqin@corp.netease.com>"]
+
+[dependencies]
+glutin = "*"
+gl = "*"
