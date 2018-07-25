@@ -1,8 +1,12 @@
 [package]
-name = "hello_gl"
+name = "hello_gl_rs"
 version = "0.1.0"
-authors = ["wang yongqin <wangyongqin@corp.netease.com>"]
+authors = ["yongqin wang <jcyongqin@outlook.com>"]
+
 
 [dependencies]
-glutin = "*"
-gl = "*"
+gl = "0.10.0"
+
+[dependencies.sdl2]
+version = "0.31.0"
+features = ["bundled", "static-link"]

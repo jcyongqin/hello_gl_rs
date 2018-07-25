@@ -1,69 +1,69 @@
+extern crate sdl2;
 extern crate gl;
-extern crate glutin;
+extern crate hello_gl_rs;
 
-use glutin::*;
-use std::result::Result;
-use glutin::GlProfile;
-use glutin::dpi::*;
-use glutin::GlContext;
+mod render_gl;
 
-struct RenderState {}
+use render_gl::{
+    Shader,
+    Program,
+    init_video,
+    create_window,
+};
 
-fn start() {}
+use std::ffi::CStr;
+use gl::types::*;
 
-fn render() {}
+
+fn start() {
+    let vert_shader = Shader::from_source(
+        &CStr::from_bytes_with_nul(b"<source code here>\0").unwrap(),
+        gl::VERTEX_SHADER,
+    ).unwrap();
+    let frag_shader = Shader::from_source(
+        &CStr::from_bytes_with_nul(b"<>\0").unwrap(),
+        gl::FRAGMENT_SHADER,
+    ).unwrap();
+
+    let program_id = unsafe { gl::CreateProgram() };
+    unsafe {
+        gl::AttachShader(program_id, vert_shader.id());
+        gl::AttachShader(program_id, frag_shader.id());
+        gl::LinkProgram(program_id);
+        gl::DetachShader(program_id, vert_shader.id());
+        gl::DetachShader(program_id, frag_shader.id());
+    }
+}
 
 fn main() {
-    let mut events_loop = glutin::EventsLoop::new();// 消息循环
-    let window = glutin::WindowBuilder::new()
-        .with_title("Hello, world!")
-        .with_resizable(false)
-        .with_dimensions(LogicalSize::new(1024.0, 768.0));// 创建窗口
-    let context = glutin::ContextBuilder::new()
-        .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (3, 3)))
-        .with_gl_profile(GlProfile::Core)
-        .with_vsync(true);// GL上下文
-    let gl_window = glutin::GlWindow::new(window, context, &events_loop).unwrap();
+    let (video, mut event_pump) = init_video().unwrap();
+    let window = create_window(&video, "Game", 900, 700).unwrap();
 
-    make_current(&gl_window).unwrap();
-    load_gl(&gl_window);
+    let _gl_context = window.gl_create_context().unwrap();
+    let _gl = gl::load_with(|s| video.gl_get_proc_address(s) as *const std::os::raw::c_void);
 
     unsafe {
-        gl::ClearColor(0.0, 1.0, 0.0, 1.0);
+        gl::Viewport(0, 0, 900, 700); // set viewport
+        gl::ClearColor(0.1, 0.1, 0.8, 1.0);
     }
+    start();
 
-    let mut running = true;
-    while running {
-        events_loop.poll_events(|event| {
+
+
+
+    'main: loop {
+        for event in event_pump.poll_iter() {
             match event {
-                glutin::Event::WindowEvent { event, .. } => match event {
-                    glutin::WindowEvent::CloseRequested => running = false,
-                    glutin::WindowEvent::Resized(logical_size) => {
-                        let dpi_factor = gl_window.get_hidpi_factor();
-                        gl_window.resize(logical_size.to_physical(dpi_factor));
-                    }
-                    _ => ()
-                },
-                _ => ()
+                sdl2::event::Event::Quit { .. } =>
+                    break 'main,
+                sdl2::event::Event::KeyDown { scancode: code, .. } =>
+                    if code.unwrap() == sdl2::keyboard::Scancode::Escape { break 'main; }
+                _ => {}
             }
-        });
-
+        }
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
         }
-
-        gl_window.swap_buffers().unwrap();
-    }
-}
-
-fn make_current(gl_window: &glutin::GlWindow) -> Result<(), glutin::ContextError> {
-    unsafe {
-        gl_window.make_current() // 获得GL上下文
-    }
-}
-
-fn load_gl(gl_window: &glutin::GlWindow) {
-    unsafe {
-        gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);// 加载GL函数
+        window.gl_swap_window();
     }
 }

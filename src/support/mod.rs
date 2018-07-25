@@ -3,16 +3,19 @@ use std::mem;
 use std::ptr;
 use glutin::{self, GlContext};
 
-mod gl {
-    pub use self::Gles2 as Gl;
-    include!(concat!(env!("OUT_DIR"), "/test_gl_bindings.rs"));
+pub struct RenderState{
+
+}
+
+fn start(){
+
 }
 
 pub struct Gl {
     gl: gl::Gl
 }
 
-pub fn load(gl_window: &glutin::GlWindow) -> Gl {
+pub fn _load(gl_window: &glutin::GlWindow) -> Gl {
     let gl = gl::Gl::load_with(|ptr| gl_window.get_proc_address(ptr) as *const _);
 
     let version = unsafe {
