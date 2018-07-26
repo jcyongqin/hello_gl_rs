@@ -49,9 +49,10 @@ fn start() {
     let shader_program = Program::from_shaders(&[vert_shader, frag_shader]).unwrap();
 
     let vertices: Vec<f32> = vec![
-        -0.5, -0.5, 0.0,
-        0.5, -0.5, 0.0,
-        0.0, 0.5, 0.0
+        // positions      // colors
+        0.5, -0.5, 0.0, 1.0, 0.0, 0.0,   // bottom right
+        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0,   // bottom left
+        0.0, 0.5, 0.0, 0.0, 0.0, 1.0    // top
     ];
     let mut vbo: gl::types::GLuint = 0;
     unsafe {
@@ -66,6 +67,7 @@ fn start() {
 //        gl::BindBuffer(gl::ARRAY_BUFFER, 0); // unbind the buffer
 //        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
         let vert_loc: gl::types::GLint = gl::GetAttribLocation(shader_program.id(), CString::new("a_vertex").unwrap().as_ptr());
+        let color_loc: gl::types::GLint = gl::GetAttribLocation(shader_program.id(), CString::new("a_color").unwrap().as_ptr());
 
         gl::EnableVertexAttribArray(vert_loc as GLuint); // this is "layout (location = 0)" in vertex shader
         gl::VertexAttribPointer(
@@ -73,8 +75,17 @@ fn start() {
             3, // the number of components per generic vertex attribute
             gl::FLOAT, // data type
             gl::FALSE, // normalized (int-to-float conversion)
-            (3 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
             std::ptr::null(), // offset of the first component
+        );
+        gl::EnableVertexAttribArray(color_loc as GLuint); // this is "layout (location = 0)" in vertex shader
+        gl::VertexAttribPointer(
+            color_loc as GLuint, // index of the generic vertex attribute ("layout (location = 0)")
+            3, // the number of components per generic vertex attribute
+            gl::FLOAT, // data type
+            gl::FALSE, // normalized (int-to-float conversion)
+            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
+            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid // offset of the first component
         );
     }
     shader_program.set_used();
