@@ -1,6 +1,9 @@
 use ::sdl2;
 use ::sdl2::*;
-use gl;
+use ::libgl::Gl as gl;
+use ::libgl;
+use ::libgl::types;
+
 use std;
 use std::ffi::{CString, CStr};
 
@@ -24,27 +27,27 @@ pub fn create_window(video_subsystem: &VideoSubsystem, name: &str, width: i32, h
 }
 
 pub struct Shader {
-    id: gl::types::GLuint,
+    id: libgl::types::GLuint,
 }
 
 impl Shader {
     pub fn from_source(
         source: &CStr,
-        kind: gl::types::GLenum,
+        kind: types::GLenum,
     ) -> Result<Shader, String> {
         let id = shader_from_source(source, kind)?;
         Ok(Shader { id })
     }
 
     pub fn from_vert_source(source: &CStr) -> Result<Shader, String> {
-        Shader::from_source(source, gl::VERTEX_SHADER)
+        Shader::from_source(source, libgl::VERTEX_SHADER)
     }
 
     pub fn from_frag_source(source: &CStr) -> Result<Shader, String> {
-        Shader::from_source(source, gl::FRAGMENT_SHADER)
+        Shader::from_source(source, libgl::FRAGMENT_SHADER)
     }
 
-    pub fn id(&self) -> gl::types::GLuint {
+    pub fn id(&self) -> types::GLuint {
         self.id
     }
 }
@@ -59,8 +62,8 @@ impl Drop for Shader {
 
 fn shader_from_source(
     source: &CStr,
-    kind: gl::types::GLenum,
-) -> Result<gl::types::GLuint, String> {
+    kind: types::GLenum,
+) -> Result<types::GLuint, String> {
     let id = unsafe { gl::CreateShader(kind) };
     unsafe {
         gl::ShaderSource(id, 1, &source.as_ptr(), std::ptr::null());
@@ -105,7 +108,7 @@ fn create_whitespace_cstring_with_len(len: usize) -> CString {
 }
 
 pub struct Program {
-    id: gl::types::GLuint,
+    id: types::GLuint,
 }
 
 impl Program {
@@ -134,7 +137,7 @@ impl Program {
                     program_id,
                     len,
                     std::ptr::null_mut(),
-                    error.as_ptr() as *mut gl::types::GLchar
+                    error.as_ptr() as *mut gl::types::GLchar,
                 );
             }
 
@@ -152,7 +155,7 @@ impl Program {
         }
     }
 
-    pub fn id(&self) -> gl::types::GLuint {
+    pub fn id(&self) -> types::GLuint {
         self.id
     }
 }

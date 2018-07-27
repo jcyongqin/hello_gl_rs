@@ -1,12 +1,7 @@
+*/target
 /target
 **/*.rs.bk
-.idea
-.idea/hello_gl_rs.iml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
-.idea/workspace.xml
-/.idea/codeStyles/Project.xml
+/.idea
 #glslangValidator.exe
 
-
+Cargo.lock

@@ -1,12 +1,6 @@
-[package]
-name = "hello_gl_rs"
-version = "0.1.0"
-authors = ["yongqin wang <jcyongqin@outlook.com>"]
+[workspace]
 
-
-[dependencies]
-gl = "0.10.0"
-
-[dependencies.sdl2]
-version = "0.31.0"
-features = ["bundled", "static-link"]
+members = [
+    "hello_gl",
+    "libgl",
+]

@@ -1,6 +1,5 @@
 extern crate sdl2;
-extern crate gl;
-extern crate hello_gl_rs;
+extern crate hello_gl;
 
 mod render_gl;
 
