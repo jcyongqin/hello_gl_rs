@@ -3,12 +3,47 @@ use std::mem;
 use std::ptr;
 use glutin::{self, GlContext};
 
-pub struct RenderState{
+use libgl as gl;
+use libgl::types;
 
+use std;
+use std::ffi::{CString, CStr};
+
+use ::libgl::RcGl as Gl;
+
+trait InitGl<T> {
+    fn init(gl: Gl) -> T;
 }
 
-fn start(){
+trait New<T> {
+    fn new() -> T;
+}
 
+struct WidthGl<T: New<T>> {
+    gl: Gl,
+    fields: T,
+}
+
+impl InitGl<__Shader> for __Shader {
+    fn init(gl: Gl) -> __Shader {
+        WidthGl {
+            gl: (gl),
+            fields: (_Shader::new()),
+        }
+    }
+}
+
+struct _Shader {
+    pub id: i32,
+    typeENUM: i32,
+}
+
+type __Shader = WidthGl<_Shader>;
+
+impl New<_Shader> for _Shader {
+    fn new() -> _Shader {
+        unimplemented!();
+    }
 }
 
 pub struct Gl {

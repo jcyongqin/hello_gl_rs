@@ -1,7 +1,11 @@
 [package]
 name = "hello_gl"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["yongqin wang <jcyongqin@outlook.com>"]
+
+
+[features]
+gl_debug = ["libgl/debug"]
 
 
 [dependencies]
@@ -10,4 +14,5 @@ libgl = { path = "../libgl" }
 [dependencies.sdl2]
 version = "0.31.0"
 features = ["bundled", "static-link"]
+
 

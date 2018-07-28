@@ -1,7 +1,5 @@
-extern crate sdl2;
 extern crate hello_gl;
-
-mod render_gl;
+extern crate sdl2;
 
 use render_gl::{
     Shader,
