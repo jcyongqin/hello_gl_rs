@@ -8,9 +8,10 @@ pub use bindings::*;
 use std::ops::Deref;
 use std::rc::Rc;
 use std::ffi::CStr;
+use std::fmt::{Result, Debug, Formatter};
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RcGl {
     inner: Rc<bindings::Gl>,
 }
@@ -34,5 +35,11 @@ impl Deref for RcGl {
     type Target = bindings::Gl;
     fn deref(&self) -> &bindings::Gl {
         &self.inner
+    }
+}
+
+impl Debug for bindings::Gl {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "RcGl")
     }
 }

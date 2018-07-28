@@ -1,10 +1,9 @@
-use libgl as gl;
-pub use libgl::RcGl;
-use libgl::types;
-
+pub use libgl::*;
+use libgl as GL;
 
 use std::ffi::{CString, CStr};
 use std::ptr;
+
 
 #[derive(Debug)]
 pub struct Shader {
@@ -18,45 +17,45 @@ impl Shader {
     pub fn new(gl: RcGl) -> Shader {
         Shader { gl, id: 0, kind: 0 }
     }
-
-    pub fn comp_vert_source(&self, source: &CString) -> Result<(), String> {
-        match self.compile_source(source, gl::VERTEX_SHADER) {
-            Ok(_) => Ok(()),
+    pub fn end(self) -> Shader { self }
+    pub fn comp_vert_source(mut self, source: &CString) -> Result<Shader, String> {
+        match self.compile_source(source, GL::VERTEX_SHADER) {
+            Ok(_) => Ok(self),
             Err(e) => Err(e)
         }
     }
 
-    pub fn comp_frag_source(&self, source: &CString) -> Result<(), String> {
-        match self.compile_source(source, gl::FRAGMENT_SHADER) {
-            Ok(_) => Ok(()),
+    pub fn comp_frag_source(mut self, source: &CString) -> Result< Shader, String> {
+        match self.compile_source(source, GL::FRAGMENT_SHADER) {
+            Ok(_) => Ok(self),
             Err(e) => Err(e)
         }
     }
 
-    fn compile_source(&self, source: &CString, kind: types::GLenum) -> Result<(), String> {
-        let gl = self.gl;
+    fn compile_source(&mut self, source: &CString, kind: types::GLenum) -> Result<(), String> {
+        let gl = self.gl.clone();
         let id = unsafe { gl.CreateShader(kind) };
         unsafe {
             gl.ShaderSource(id, 1, &source.as_ptr(), ptr::null());
             gl.CompileShader(id);
         }
-        let mut success: gl::types::GLint = 1;
+        let mut success: types::GLint = 1;
         unsafe {
-            gl.GetShaderiv(id, gl::COMPILE_STATUS, &mut success);
+            gl.GetShaderiv(id, GL::COMPILE_STATUS, &mut success);
         }
         return if success != 0 {
             self.id = id;
             Ok(())
         } else {
-            let mut len: gl::types::GLint = 0;
-            unsafe { gl::RcGl::GetShaderiv(id, gl::INFO_LOG_LENGTH, &mut len); }
+            let mut len: types::GLint = 0;
+            unsafe { gl.GetShaderiv(id, GL::INFO_LOG_LENGTH, &mut len); }
             let error = create_whitespace_cstring_with_len(len as usize);
             unsafe {
-                gl::RcGl::GetShaderInfoLog(
+                gl.GetShaderInfoLog(
                     id,
                     len,
                     ptr::null_mut(),
-                    error.as_ptr() as *mut gl::types::GLchar,
+                    error.as_ptr() as *mut types::GLchar,
                 );
             }
             Err(error.to_string_lossy().into_owned())
@@ -89,38 +88,38 @@ fn create_whitespace_cstring_with_len(len: usize) -> CString {
 }
 
 pub struct Program {
-    gl: gl::RcGl,
-    id: gl::types::GLuint,
+    gl: RcGl,
+    id: types::GLuint,
 }
 
 impl Program {
     pub fn new(gl: RcGl) -> Program { Program { gl, id: 0 } }
 
-    pub fn link_shaders(&self, shaders: &[Shader]) -> Result<(), String> {
-        let gl = self.gl;
+    pub fn link_shaders(mut self, shaders: &[Shader]) -> Result< Program, String> {
+        let gl = self.gl.clone();
         self.id = unsafe { gl.CreateProgram() };
         for shader in shaders {
             unsafe { gl.AttachShader(self.id, shader.id()); }
         }
         unsafe { gl.LinkProgram(self.id); }
-        let mut success: gl::types::GLint = 1;
+        let mut success: types::GLint = 1;
         unsafe {
-            self.gl.GetProgramiv(self.id, gl::LINK_STATUS, &mut success);
+            gl.GetProgramiv(self.id, GL::LINK_STATUS, &mut success);
         }
         return if success != 0 {
-            Ok(())
+            Ok(self)
         } else {
-            let mut len: gl::types::GLint = 0;
+            let mut len: types::GLint = 0;
             unsafe {
-                gl.GetProgramiv(self.id, gl::INFO_LOG_LENGTH, &mut len);
+                gl.GetProgramiv(self.id, GL::INFO_LOG_LENGTH, &mut len);
             }
             let error = create_whitespace_cstring_with_len(len as usize);
             unsafe {
-                self.gl.GetProgramInfoLog(
+                gl.GetProgramInfoLog(
                     self.id,
                     len,
                     ptr::null_mut(),
-                    error.as_ptr() as *mut gl::types::GLchar,
+                    error.as_ptr() as *mut types::GLchar,
                 );
             }
             Err(error.to_string_lossy().into_owned())
