@@ -38,7 +38,7 @@ impl Deref for RcGl {
     }
 }
 
-impl Debug for bindings::Gl {
+impl Debug for Gl {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "RcGl")
     }

@@ -3,7 +3,15 @@ use libgl as GL;
 
 use std::ffi::{CString, CStr};
 use std::ptr;
+use ::resources;
 
+#[derive(Debug)]
+pub enum Error {
+    ResourceLoad { name: String, inner: resources::Error },
+    CanNotDetermineShaderTypeForResource { name: String },
+    CompileError { name: String, message: String },
+    LinkError { name: String, message: String },
+}
 
 #[derive(Debug)]
 pub struct Shader {

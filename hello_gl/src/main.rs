@@ -1,7 +1,8 @@
 extern crate hello_gl;
 extern crate sdl2;
 
-use hello_gl::{init_video, create_window};
+use hello_gl::*;
+
 use hello_gl::render_gl as GL;
 use hello_gl::render_gl::{
     Shader,
@@ -9,6 +10,7 @@ use hello_gl::render_gl::{
     RcGl,
     types,
 };
+use hello_gl::resources::Resources;
 
 use std::*;
 use std::ffi::{CStr, CString};
@@ -24,21 +26,11 @@ struct RenderState {
     program: Program,
 }
 
-fn load_file(path: &str) -> Result<ffi::CString, String> {
-    let mut file = File::open(path).unwrap();
-    // allocate buffer of the same size as file
-    let mut buffer: Vec<u8> = Vec::with_capacity(
-        file.metadata().unwrap().len() as usize + 1
-    );
-    file.read_to_end(&mut buffer).unwrap();
-    // check for nul byte
-    if buffer.iter().find(|i| **i == 0).is_some() {
-        return Err(String::from("FileContainsNil"));
-    }
-    Ok(unsafe { ffi::CString::from_vec_unchecked(buffer) })
-}
-
 fn start(gl: RcGl) {
+//    unsafe {
+//        gl.ClearColor(0.1, 0.1, 0.8, 1.0);
+//    }
+
     let vert_shader = Shader::new(gl.clone())
         .comp_vert_source(&load_file("./asset/triangle.vert").unwrap())
         .unwrap().end();
@@ -46,7 +38,6 @@ fn start(gl: RcGl) {
     let frag_shader = Shader::new(gl.clone())
         .comp_frag_source(&load_file("./asset/triangle.frag").unwrap())
         .unwrap().end();
-
     let shader_program = Program::new(gl.clone())
         .link_shaders(&[vert_shader, frag_shader])
         .unwrap();
@@ -96,6 +87,9 @@ fn start(gl: RcGl) {
 
 fn render(gl: RcGl) {
     unsafe {
+        gl.Clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
+    }
+    unsafe {
         gl.DrawArrays(
             GL::TRIANGLES, // mode
             0, // starting index in the enabled arrays
@@ -104,17 +98,30 @@ fn render(gl: RcGl) {
     }
 }
 
+
 fn main() {
-    let (video, mut event_pump) = init_video().unwrap();
+    let (video, mut event_pump) = init_sys().unwrap();
     let window = create_window(&video, "Game", 900, 700).unwrap();
+//    let gl = *load_opengl(&window)();
+    let gl_context = window.gl_create_context().unwrap();
+    let gl = (|| {
+        window.gl_make_current(&gl_context).unwrap();
+        let video = window.subsystem();
+        render_gl::RcGl::load_with(move |s| {
+            video.gl_get_proc_address(s) as *const std::os::raw::c_void
+        })
+    })();
 
-    let _gl_context = window.gl_create_context().unwrap();
-    let gl = RcGl::load_with(|s| video.gl_get_proc_address(s) as *const std::os::raw::c_void);
 
-    unsafe {
-        gl.Viewport(0, 0, 900, 700); // set viewport
-        gl.ClearColor(0.1, 0.1, 0.8, 1.0);
-    }
+//    let gl_context = window.gl_create_context().unwrap();
+//    window.gl_make_current(&gl_context).unwrap();
+//
+//   let gl= render_gl::RcGl::load_with(|s| {
+//        v.gl_get_proc_address(s) as *const std::os::raw::c_void
+//    }).clone();
+    let err = unsafe { gl.GetError() };
+    println!("{:4x}", err);
+
     start(gl.clone());
 
     'main: loop {
@@ -122,15 +129,35 @@ fn main() {
             match event {
                 sdl2::event::Event::Quit { .. } =>
                     break 'main,
-                sdl2::event::Event::KeyDown { scancode: code, .. } =>
-                    if code.unwrap() == sdl2::keyboard::Scancode::Escape { break 'main; }
+                sdl2::event::Event::KeyDown { scancode, .. } =>
+                    if scancode.unwrap() == sdl2::keyboard::Scancode::Escape { break 'main; }
+                sdl2::event::Event::Window { win_event, .. } => unsafe {
+                    match win_event {
+                        sdl2::event::WindowEvent::Resized(w, h) => {
+                            gl.Viewport(0, 0, w, h);
+                            println!("{},{}", w, h)
+                        }
+                        _ => ()
+                    }
+                }
                 _ => {}
             }
-        }
-        unsafe {
-            gl.Clear(hello_gl::render_gl::COLOR_BUFFER_BIT);
         }
         render(gl.clone());
         window.gl_swap_window();
     }
+}
+
+fn load_file(path: &str) -> Result<ffi::CString, String> {
+    let mut file = File::open(path).unwrap();
+    // allocate buffer of the same size as file
+    let mut buffer: Vec<u8> = Vec::with_capacity(
+        file.metadata().unwrap().len() as usize + 1
+    );
+    file.read_to_end(&mut buffer).unwrap();
+    // check for nul byte
+    if buffer.iter().find(|i| **i == 0).is_some() {
+        return Err(String::from("FileContainsNil"));
+    }
+    Ok(unsafe { ffi::CString::from_vec_unchecked(buffer) })
 }
