@@ -1,7 +1,7 @@
 pub use libgl::*;
 use libgl as GL;
 
-use std::ffi::{CString, CStr};
+use std::ffi::{CString};
 use std::ptr;
 use ::resources;
 

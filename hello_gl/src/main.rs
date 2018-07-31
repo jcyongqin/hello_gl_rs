@@ -10,26 +10,14 @@ use hello_gl::render_gl::{
     RcGl,
     types,
 };
-use hello_gl::resources::Resources;
 
 use std::*;
 use std::ffi::{CStr, CString};
-use std::fs::File;
-use std::io::BufRead;
-use std::convert::From;
-use std::path::{Path, PathBuf};
-use std::fs;
-use std::io::{self, Read};
-use std::ffi;
 
-struct RenderState {
-    program: Program,
-}
-
-fn start(gl: RcGl) {
-//    unsafe {
-//        gl.ClearColor(0.1, 0.1, 0.8, 1.0);
-//    }
+fn start(gl: RcGl) -> types::GLuint {
+    unsafe {
+        gl.ClearColor(0.2, 0.2, 0.6, 1.0);
+    }
 
     let vert_shader = Shader::new(gl.clone())
         .comp_vert_source(&load_file("./asset/triangle.vert").unwrap())
@@ -44,9 +32,12 @@ fn start(gl: RcGl) {
 
     let vertices: Vec<f32> = vec![
         // positions      // colors
-        0.5, -0.5, 0.0, 1.0, 0.0, 0.0,   // bottom right
-        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0,   // bottom left
-        0.0, 0.5, 0.0, 0.0, 0.0, 1.0    // top
+        -0.5, -0.5, 0.0, 1.0, 0.0, 0.0,     // bottom left
+        -0.5, 0.5, 0.0, 0.0, 1.0, 0.0,      // top left
+        0.5, -0.5, 0.0, 0.0, 1.0, 0.0,      // bottom right
+        -0.5, 0.5, 0.0, 0.0, 1.0, 0.0,      // top left
+        0.5, 0.5, 0.0, 0.0, 0.0, 1.0,       // top right
+        0.5, -0.5, 0.0, 0.0, 1.0, 0.0,      // bottom right
     ];
     let mut vbo: types::GLuint = 0;
     unsafe {
@@ -58,11 +49,29 @@ fn start(gl: RcGl) {
             vertices.as_ptr() as *const types::GLvoid, // pointer to data
             GL::STATIC_DRAW, // usage
         );
-//        gl::BindBuffer(gl::ARRAY_BUFFER, 0); // unbind the buffer
-//        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+    }
+
+    let indices: Vec<u32> = vec![
+        // 注意索引从0开始!
+        0, 1, 3, // 第一个三角形
+        1, 2, 3,  // 第二个三角形
+    ];
+    let mut ebo: types::GLuint = 0;
+    unsafe {
+        gl.GenBuffers(1, &mut ebo);
+        gl.BindBuffer(GL::ELEMENT_ARRAY_BUFFER, ebo);
+        gl.BufferData(
+            GL::ELEMENT_ARRAY_BUFFER,
+            (indices.len() * std::mem::size_of::<u32>()) as types::GLsizeiptr,
+            indices.as_ptr() as *const types::GLvoid,
+            GL::STATIC_DRAW,
+        );
+    }
+
+    unsafe {
+
         let vert_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_vertex").unwrap().as_ptr());
         let color_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_color").unwrap().as_ptr());
-
         gl.EnableVertexAttribArray(vert_loc as types::GLuint); // this is "layout (location = 0)" in vertex shader
         gl.VertexAttribPointer(
             vert_loc as types::GLuint, // index of the generic vertex attribute ("layout (location = 0)")
@@ -82,36 +91,57 @@ fn start(gl: RcGl) {
             (3 * std::mem::size_of::<f32>()) as *const types::GLvoid, // offset of the first component
         );
     }
+
+
+
     shader_program.set_used();
+    return ebo;
 }
 
-fn render(gl: RcGl) {
+use std::convert::From;
+use std::fs::{self, File};
+
+use std::io::{self, Read, BufRead};
+
+struct RenderState {
+    program: Program,
+}
+
+fn render(gl: RcGl, ebo: types::GLuint) {
     unsafe {
         gl.Clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
-    }
-    unsafe {
-        gl.DrawArrays(
-            GL::TRIANGLES, // mode
-            0, // starting index in the enabled arrays
-            3, // number of indices to be rendered
+//        gl.PolygonMode(GL::FRONT_AND_BACK,GL::LINE);
+        gl.BindBuffer(GL::ELEMENT_ARRAY_BUFFER, ebo);
+        gl.DrawElements(
+            GL::TRIANGLES,
+            6,
+            GL::UNSIGNED_INT,
+            0 as *const types::GLvoid,
         );
+        let err = gl.GetError();
+        println!("{}", err);
+//        gl.DrawArrays(
+//            GL::TRIANGLES, // mode
+//            0, // starting index in the enabled arrays
+//            6, // number of indices to be rendered
+//        );
     }
 }
 
+fn load_opengl(window: &Window) -> (GLContext, RcGl) {
+    let gl_context = window.gl_create_context().unwrap();
+    window.gl_make_current(&gl_context).unwrap();
+    let video = window.subsystem();
+    let gl = render_gl::RcGl::load_with(move |s| {
+        video.gl_get_proc_address(s) as *const std::os::raw::c_void
+    });
+    return (gl_context, gl);
+}
 
 fn main() {
     let (video, mut event_pump) = init_sys().unwrap();
     let window = create_window(&video, "Game", 900, 700).unwrap();
-//    let gl = *load_opengl(&window)();
-    let gl_context = window.gl_create_context().unwrap();
-    let gl = (|| {
-        window.gl_make_current(&gl_context).unwrap();
-        let video = window.subsystem();
-        render_gl::RcGl::load_with(move |s| {
-            video.gl_get_proc_address(s) as *const std::os::raw::c_void
-        })
-    })();
-
+    let (gl_context, gl) = load_opengl(&window);
 
 //    let gl_context = window.gl_create_context().unwrap();
 //    window.gl_make_current(&gl_context).unwrap();
@@ -119,10 +149,9 @@ fn main() {
 //   let gl= render_gl::RcGl::load_with(|s| {
 //        v.gl_get_proc_address(s) as *const std::os::raw::c_void
 //    }).clone();
-    let err = unsafe { gl.GetError() };
-    println!("{:4x}", err);
 
-    start(gl.clone());
+
+    let ebo = start(gl.clone());
 
     'main: loop {
         for event in event_pump.poll_iter() {
@@ -143,7 +172,7 @@ fn main() {
                 _ => {}
             }
         }
-        render(gl.clone());
+        render(gl.clone(), ebo);
         window.gl_swap_window();
     }
 }

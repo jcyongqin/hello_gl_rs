@@ -5,7 +5,7 @@ extern crate libgl;
 pub mod render_gl;
 pub mod resources;
 
-pub use sdl2::{EventPump, VideoSubsystem, video::Window};
+pub use sdl2::{EventPump, VideoSubsystem, video::Window, video::GLContext};
 
 pub fn init_sys() -> Option<(VideoSubsystem, EventPump)> {
     let sdl = sdl2::init().unwrap();
