@@ -14,7 +14,7 @@ use hello_gl::render_gl::{
 use std::*;
 use std::ffi::{CStr, CString};
 
-fn start(gl: RcGl) -> types::GLuint {
+fn start(gl: RcGl) -> Program {
     unsafe {
         gl.ClearColor(0.2, 0.2, 0.6, 1.0);
     }
@@ -33,8 +33,6 @@ fn start(gl: RcGl) -> types::GLuint {
     let vertices: Vec<f32> = vec![
         // positions      // colors
         -0.5, -0.5, 0.0, 1.0, 0.0, 0.0,     // bottom left
-        -0.5, 0.5, 0.0, 0.0, 1.0, 0.0,      // top left
-        0.5, -0.5, 0.0, 0.0, 1.0, 0.0,      // bottom right
         -0.5, 0.5, 0.0, 0.0, 1.0, 0.0,      // top left
         0.5, 0.5, 0.0, 0.0, 0.0, 1.0,       // top right
         0.5, -0.5, 0.0, 0.0, 1.0, 0.0,      // bottom right
@@ -69,7 +67,6 @@ fn start(gl: RcGl) -> types::GLuint {
     }
 
     unsafe {
-
         let vert_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_vertex").unwrap().as_ptr());
         let color_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_color").unwrap().as_ptr());
         gl.EnableVertexAttribArray(vert_loc as types::GLuint); // this is "layout (location = 0)" in vertex shader
@@ -93,9 +90,8 @@ fn start(gl: RcGl) -> types::GLuint {
     }
 
 
-
     shader_program.set_used();
-    return ebo;
+    return shader_program;
 }
 
 use std::convert::From;
@@ -107,19 +103,24 @@ struct RenderState {
     program: Program,
 }
 
-fn render(gl: RcGl, ebo: types::GLuint) {
+fn render(gl: RcGl, shader: &Program) {
     unsafe {
         gl.Clear(GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT);
 //        gl.PolygonMode(GL::FRONT_AND_BACK,GL::LINE);
-        gl.BindBuffer(GL::ELEMENT_ARRAY_BUFFER, ebo);
+        shader.set_used();
         gl.DrawElements(
             GL::TRIANGLES,
             6,
             GL::UNSIGNED_INT,
             0 as *const types::GLvoid,
         );
-        let err = gl.GetError();
-        println!("{}", err);
+
+        match gl.GetError() {
+            0 => (),
+            err @ 1...10000 => println!("{}", err),
+            _ => ()
+        };
+
 //        gl.DrawArrays(
 //            GL::TRIANGLES, // mode
 //            0, // starting index in the enabled arrays
@@ -151,7 +152,7 @@ fn main() {
 //    }).clone();
 
 
-    let ebo = start(gl.clone());
+    let shader = start(gl.clone());
 
     'main: loop {
         for event in event_pump.poll_iter() {
@@ -172,7 +173,7 @@ fn main() {
                 _ => {}
             }
         }
-        render(gl.clone(), ebo);
+        render(gl.clone(), &shader);
         window.gl_swap_window();
     }
 }
