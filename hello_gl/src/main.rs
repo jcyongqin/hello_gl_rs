@@ -7,6 +7,7 @@ use hello_gl::render_gl as GL;
 use hello_gl::render_gl::{
     Shader,
     Program,
+    Buffer,
     RcGl,
     types,
 };
@@ -37,17 +38,26 @@ fn start(gl: RcGl) -> Program {
         0.5, 0.5, 0.0, 0.0, 0.0, 1.0,       // top right
         0.5, -0.5, 0.0, 0.0, 1.0, 0.0,      // bottom right
     ];
-    let mut vbo: types::GLuint = 0;
-    unsafe {
-        gl.GenBuffers(1, &mut vbo);
-        gl.BindBuffer(GL::ARRAY_BUFFER, vbo);
-        gl.BufferData(
-            GL::ARRAY_BUFFER, // target
-            (vertices.len() * std::mem::size_of::<f32>()) as types::GLsizeiptr, // size of data in bytes
-            vertices.as_ptr() as *const types::GLvoid, // pointer to data
-            GL::STATIC_DRAW, // usage
-        );
-    }
+    let vbo = Buffer::gen(gl.clone(), GL::ARRAY_BUFFER);
+    vbo.bind();
+    vbo.data(&vertices, GL::STATIC_DRAW);
+
+//    let mut vbo: types::GLuint = 0;
+//    unsafe {
+//        gl.GenBuffers(1, &mut vbo);
+//        gl.BindBuffer(GL::ARRAY_BUFFER, vbo);
+//        gl.BufferData(
+//            GL::ARRAY_BUFFER, // target
+//            (vertices.len() * std::mem::size_of::<f32>()) as types::GLsizeiptr, // size of data in bytes
+//            vertices.as_ptr() as *const types::GLvoid, // pointer to data
+//            GL::STATIC_DRAW, // usage
+//        );
+//    }
+    match unsafe { gl.GetError() } {
+        0 => (),
+        err @ 1...10000 => println!("{:x}", err),
+        _ => ()
+    };
 
     let indices: Vec<u32> = vec![
         // 注意索引从0开始!
