@@ -1,7 +1,7 @@
 pub use libgl::*;
 use libgl as GL;
 
-
+pub mod texture;
 pub mod shader;
 pub mod program;
 

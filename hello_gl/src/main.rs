@@ -32,11 +32,11 @@ fn start(gl: RcGl) -> Program {
         .unwrap();
 
     let vertices: Vec<f32> = vec![
-        // positions      // colors
-        -0.5, -0.5, 0.0, 1.0, 0.0, 0.0,     // bottom left
-        -0.5, 0.5, 0.0, 0.0, 1.0, 0.0,      // top left
-        0.5, 0.5, 0.0, 0.0, 0.0, 1.0,       // top right
-        0.5, -0.5, 0.0, 0.0, 1.0, 0.0,      // bottom right
+        // positions        // colors       // UV
+        -0.5, -0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,   // bottom left
+        -0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,   // top left
+        0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0,     // top right
+        0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0,    // bottom right
     ];
     let vbo = Buffer::gen(gl.clone(), GL::ARRAY_BUFFER);
     vbo.bind();
@@ -79,13 +79,14 @@ fn start(gl: RcGl) -> Program {
     unsafe {
         let vert_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_vertex").unwrap().as_ptr());
         let color_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_color").unwrap().as_ptr());
+        let texcoord_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_texcoord").unwrap().as_ptr());
         gl.EnableVertexAttribArray(vert_loc as types::GLuint); // this is "layout (location = 0)" in vertex shader
         gl.VertexAttribPointer(
             vert_loc as types::GLuint, // index of the generic vertex attribute ("layout (location = 0)")
             3, // the number of components per generic vertex attribute
             GL::FLOAT, // data type
             GL::FALSE, // normalized (int-to-float conversion)
-            (6 * std::mem::size_of::<f32>()) as types::GLint, // stride (byte offset between consecutive attributes)
+            (8 * std::mem::size_of::<f32>()) as types::GLint, // stride (byte offset between consecutive attributes)
             std::ptr::null(), // offset of the first component
         );
         gl.EnableVertexAttribArray(color_loc as types::GLuint); // this is "layout (location = 0)" in vertex shader
@@ -94,11 +95,48 @@ fn start(gl: RcGl) -> Program {
             3, // the number of components per generic vertex attribute
             GL::FLOAT, // data type
             GL::FALSE, // normalized (int-to-float conversion)
-            (6 * std::mem::size_of::<f32>()) as types::GLint, // stride (byte offset between consecutive attributes)
+            (8 * std::mem::size_of::<f32>()) as types::GLint, // stride (byte offset between consecutive attributes)
             (3 * std::mem::size_of::<f32>()) as *const types::GLvoid, // offset of the first component
         );
+        gl.EnableVertexAttribArray(texcoord_loc as types::GLuint); // this is "layout (location = 0)" in vertex shader
+        gl.VertexAttribPointer(
+            texcoord_loc as types::GLuint, // index of the generic vertex attribute ("layout (location = 0)")
+            2, // the number of components per generic vertex attribute
+            GL::FLOAT, // data type
+            GL::FALSE, // normalized (int-to-float conversion)
+            (8 * std::mem::size_of::<f32>()) as types::GLint, // stride (byte offset between consecutive attributes)
+            (6 * std::mem::size_of::<f32>()) as *const types::GLvoid, // offset of the first component
+        );
     }
+    unsafe {
+        // load and create a texture
+        // -------------------------
+        let mut texture1: types::GLuint = 0;
+        // texture 1
+        // ---------
+        gl.GenTextures(1, &mut texture1);
+        gl.BindTexture(GL::TEXTURE_2D, texture1);
+        // set the texture wrapping parameters
+        gl.TexParameteri(GL::TEXTURE_2D, GL::TEXTURE_WRAP_S, GL::REPEAT as types::GLint);    // set texture wrapping to GL_REPEAT (default wrapping method)
+        gl.TexParameteri(GL::TEXTURE_2D, GL::TEXTURE_WRAP_T, GL::REPEAT as types::GLint);
+        // set texture filtering parameters
+        gl.TexParameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::LINEAR as types::GLint);
+        gl.TexParameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::LINEAR as types::GLint);
+        // load image, create texture and generate mipmaps
 
+        // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+        let img = open(Path::new("./asset/awesomeface.png")).unwrap().flipv().to_rgb();
+        gl.TexImage2D(GL::TEXTURE_2D,
+                      0,
+                      GL::RGB as types::GLint,
+                      img.width() as types::GLint,
+                      img.height() as types::GLint,
+                      0,
+                      GL::RGB,
+                      GL::UNSIGNED_BYTE,
+                      img.into_vec().as_ptr() as *const types::GLvoid,
+        );
+    }
 
     shader_program.set_used();
     return shader_program;
@@ -108,6 +146,7 @@ use std::convert::From;
 use std::fs::{self, File};
 
 use std::io::{self, Read, BufRead};
+use std::path::Path;
 
 struct RenderState {
     program: Program,
