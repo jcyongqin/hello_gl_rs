@@ -7,7 +7,7 @@ pub mod render_gl;
 pub mod resources;
 
 pub use sdl2::{EventPump, VideoSubsystem, video::Window, video::GLContext, video::SwapInterval};
-pub use image::{open, DynamicImage, RgbImage};
+pub use image::{open, DynamicImage, RgbImage,GenericImage};
 
 pub fn init_sys() -> Option<(VideoSubsystem, EventPump)> {
     let sdl = sdl2::init().unwrap();

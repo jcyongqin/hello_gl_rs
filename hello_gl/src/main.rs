@@ -17,6 +17,9 @@ use std::ffi::{CStr, CString};
 
 fn start(gl: RcGl) -> Program {
     unsafe {
+        gl.Enable(GL::ALPHA);
+        gl.Enable(GL::BLEND);
+        gl.BlendFunc(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
         gl.ClearColor(0.2, 0.2, 0.6, 1.0);
     }
 
@@ -125,16 +128,19 @@ fn start(gl: RcGl) -> Program {
         // load image, create texture and generate mipmaps
 
         // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
-        let img = open(Path::new("./asset/awesomeface.png")).unwrap().flipv().to_rgb();
+        let img = open(Path::new("./asset/awesomeface.png")).unwrap().flipv();//.to_rgba();
+
+        let img = img.to_rgba();
+
         gl.TexImage2D(GL::TEXTURE_2D,
                       0,
-                      GL::RGB as types::GLint,
+                      GL::RGBA as types::GLint,
                       img.width() as types::GLint,
                       img.height() as types::GLint,
                       0,
-                      GL::RGB,
+                      GL::RGBA,
                       GL::UNSIGNED_BYTE,
-                      img.into_vec().as_ptr() as *const types::GLvoid,
+                      img.as_ptr() as *const types::GLvoid,
         );
     }
 
