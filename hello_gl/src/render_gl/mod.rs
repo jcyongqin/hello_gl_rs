@@ -1,10 +1,8 @@
-pub use libgl::*;
-use libgl as GL;
-
 pub mod texture;
 pub mod shader;
 pub mod program;
 
+pub use libgl::{GL, RcGl, GL::types};
 pub use self::shader::Shader;
 pub use self::program::Program;
 
@@ -45,7 +43,7 @@ impl Buffer {
         unsafe { self.gl.BindBuffer(self.kind, self.id) }
     }
     pub fn data<T>(&self, data: &[T], usage: types::GLenum) {
-        println!("{},{},{}",data.len(),mem::size_of::<T>(),self.id);
+        println!("{},{},{}", data.len(), mem::size_of::<T>(), self.id);
         match unsafe { self.gl.GetError() } {
             0 => (),
             err @ 1...10000 => println!("1 {:x}", err),

@@ -1,16 +1,17 @@
 extern crate hello_gl;
 extern crate sdl2;
+extern crate nalgebra as na;
 
 use hello_gl::*;
-
-use hello_gl::render_gl as GL;
 use hello_gl::render_gl::{
+    GL,
     Shader,
     Program,
     Buffer,
     RcGl,
     types,
 };
+
 
 use std::*;
 use std::ffi::{CStr, CString};
@@ -22,6 +23,9 @@ fn start(gl: RcGl) -> Program {
         gl.BlendFunc(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
         gl.ClearColor(0.2, 0.2, 0.6, 1.0);
     }
+    let one = na::one::<na::Matrix4<f32>>();
+
+
 
     let vert_shader = Shader::new(gl.clone())
         .comp_vert_source(&load_file("./asset/triangle.vert").unwrap())
@@ -172,7 +176,7 @@ fn render(gl: RcGl, shader: &Program) {
 
         match gl.GetError() {
             0 => (),
-            err @ 1...10000 => println!("{}", err),
+            err @ 1...10000 => println!("err:{}", err),
             _ => ()
         };
 
@@ -220,7 +224,7 @@ fn main() {
                     match win_event {
                         sdl2::event::WindowEvent::Resized(w, h) => {
                             gl.Viewport(0, 0, w, h);
-                            println!("{},{}", w, h)
+                            //println!("{},{}", w, h)
                         }
                         _ => ()
                     }

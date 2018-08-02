@@ -1,9 +1,11 @@
 //mod bindings {
 //    include!( concat! ( env! ( "OUT_DIR" ), "/bindings.rs" ));
 //}
-mod bindings;
+pub mod bindings;
 
-pub use bindings::*;
+pub use bindings as GL;
+
+use bindings::{types, Gl};
 
 use std::ops::Deref;
 use std::rc::Rc;
