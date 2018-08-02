@@ -11,7 +11,7 @@ gl_debug = ["libgl/debug"]
 [dependencies]
 libgl = { path = "../libgl" }
 image = "*"
-nalgebra = "*"
+cgmath = "*"
 
 [dependencies.sdl2]
 version = "0.31.0"

@@ -43,12 +43,6 @@ impl Buffer {
         unsafe { self.gl.BindBuffer(self.kind, self.id) }
     }
     pub fn data<T>(&self, data: &[T], usage: types::GLenum) {
-        println!("{},{},{}", data.len(), mem::size_of::<T>(), self.id);
-        match unsafe { self.gl.GetError() } {
-            0 => (),
-            err @ 1...10000 => println!("1 {:x}", err),
-            _ => ()
-        };
         unsafe {
             self.gl.BufferData(
                 self.kind,
@@ -57,10 +51,5 @@ impl Buffer {
                 usage,
             );
         }
-        match unsafe { self.gl.GetError() } {
-            0 => (),
-            err @ 1...10000 => println!("2 {:x}", err),
-            _ => ()
-        };
     }
 }

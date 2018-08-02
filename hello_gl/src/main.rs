@@ -1,6 +1,6 @@
 extern crate hello_gl;
 extern crate sdl2;
-extern crate nalgebra as na;
+extern crate cgmath as vm;
 
 use hello_gl::*;
 use hello_gl::render_gl::{
@@ -12,19 +12,30 @@ use hello_gl::render_gl::{
     types,
 };
 
+use vm::prelude::*;
+
+type Mat4 = vm::Matrix4<f32>;
 
 use std::*;
+
 use std::ffi::{CStr, CString};
+use std::convert::From;
+use std::fs::File;
+use std::io::{Read, BufRead};
+use std::path::Path;
 
 fn start(gl: RcGl) -> Program {
     unsafe {
-        gl.Enable(GL::ALPHA);
         gl.Enable(GL::BLEND);
         gl.BlendFunc(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
         gl.ClearColor(0.2, 0.2, 0.6, 1.0);
     }
-    let one = na::one::<na::Matrix4<f32>>();
 
+    let vec = vm::vec4::<f32>(1.0, 0.0, 0.0, 1.0);
+    let trans = Mat4::from_translation(vm::vec3(1.0, 0.0, 0.0));
+    let rotate = Mat4::from_angle_z(vm::Deg(90.0));
+    let scale = Mat4::from_scale(0.5);
+    let MVP = trans * rotate * scale;
 
 
     let vert_shader = Shader::new(gl.clone())
@@ -60,11 +71,7 @@ fn start(gl: RcGl) -> Program {
 //            GL::STATIC_DRAW, // usage
 //        );
 //    }
-    match unsafe { gl.GetError() } {
-        0 => (),
-        err @ 1...10000 => println!("{:x}", err),
-        _ => ()
-    };
+
 
     let indices: Vec<u32> = vec![
         // 注意索引从0开始!
@@ -84,9 +91,15 @@ fn start(gl: RcGl) -> Program {
     }
 
     unsafe {
-        let vert_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_vertex").unwrap().as_ptr());
-        let color_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_color").unwrap().as_ptr());
-        let texcoord_loc: types::GLint = gl.GetAttribLocation(shader_program.id(), CString::new("a_texcoord").unwrap().as_ptr());
+        let vert_loc: types::GLint = gl.GetAttribLocation(
+            shader_program.id(), CString::new("a_vertex").unwrap().as_ptr());
+
+        let color_loc: types::GLint = gl.GetAttribLocation(
+            shader_program.id(), CString::new("a_color").unwrap().as_ptr());
+
+        let texcoord_loc: types::GLint = gl.GetAttribLocation(
+            shader_program.id(), CString::new("a_texcoord").unwrap().as_ptr());
+
         gl.EnableVertexAttribArray(vert_loc as types::GLuint); // this is "layout (location = 0)" in vertex shader
         gl.VertexAttribPointer(
             vert_loc as types::GLuint, // index of the generic vertex attribute ("layout (location = 0)")
@@ -96,7 +109,11 @@ fn start(gl: RcGl) -> Program {
             (8 * std::mem::size_of::<f32>()) as types::GLint, // stride (byte offset between consecutive attributes)
             std::ptr::null(), // offset of the first component
         );
+        print_gl_err(gl.clone(), "ss col ");
+
         gl.EnableVertexAttribArray(color_loc as types::GLuint); // this is "layout (location = 0)" in vertex shader
+        print_gl_err(gl.clone(), "start col ");
+
         gl.VertexAttribPointer(
             color_loc as types::GLuint, // index of the generic vertex attribute ("layout (location = 0)")
             3, // the number of components per generic vertex attribute
@@ -105,6 +122,7 @@ fn start(gl: RcGl) -> Program {
             (8 * std::mem::size_of::<f32>()) as types::GLint, // stride (byte offset between consecutive attributes)
             (3 * std::mem::size_of::<f32>()) as *const types::GLvoid, // offset of the first component
         );
+        print_gl_err(gl.clone(), "start img ");
         gl.EnableVertexAttribArray(texcoord_loc as types::GLuint); // this is "layout (location = 0)" in vertex shader
         gl.VertexAttribPointer(
             texcoord_loc as types::GLuint, // index of the generic vertex attribute ("layout (location = 0)")
@@ -116,6 +134,7 @@ fn start(gl: RcGl) -> Program {
         );
     }
     unsafe {
+
         // load and create a texture
         // -------------------------
         let mut texture1: types::GLuint = 0;
@@ -135,6 +154,7 @@ fn start(gl: RcGl) -> Program {
         let img = open(Path::new("./asset/awesomeface.png")).unwrap().flipv();//.to_rgba();
 
         let img = img.to_rgba();
+        print_gl_err(gl.clone(), "start MVP ");
 
         gl.TexImage2D(GL::TEXTURE_2D,
                       0,
@@ -149,18 +169,20 @@ fn start(gl: RcGl) -> Program {
     }
 
     shader_program.set_used();
+    unsafe {
+        let a: [[f32; 4]; 4] = MVP.into();
+
+        println!("{:?}", &a);
+
+        let mvp_matrix_loc = gl.GetUniformLocation(shader_program.id(), CString::new("mvp_matrix").unwrap().as_ptr());
+        println!("loc {:?},ref{:?}", mvp_matrix_loc, a.as_ptr());
+        print_gl_err(gl.clone(), "end MVP");
+        gl.UniformMatrix4fv(mvp_matrix_loc, 1, GL::FALSE,
+                            a.as_ptr() as *const types::GLfloat);
+    }
     return shader_program;
 }
 
-use std::convert::From;
-use std::fs::{self, File};
-
-use std::io::{self, Read, BufRead};
-use std::path::Path;
-
-struct RenderState {
-    program: Program,
-}
 
 fn render(gl: RcGl, shader: &Program) {
     unsafe {
@@ -173,12 +195,6 @@ fn render(gl: RcGl, shader: &Program) {
             GL::UNSIGNED_INT,
             0 as *const types::GLvoid,
         );
-
-        match gl.GetError() {
-            0 => (),
-            err @ 1...10000 => println!("err:{}", err),
-            _ => ()
-        };
 
 //        gl.DrawArrays(
 //            GL::TRIANGLES, // mode
@@ -212,7 +228,7 @@ fn main() {
 
 
     let shader = start(gl.clone());
-
+    print_gl_err(gl.clone(), "end start");
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -249,4 +265,17 @@ fn load_file(path: &str) -> Result<ffi::CString, String> {
         return Err(String::from("FileContainsNil"));
     }
     Ok(unsafe { ffi::CString::from_vec_unchecked(buffer) })
+}
+
+fn print_gl_err(gl: RcGl, tag: &str) {
+    print!("{}", tag);
+    unsafe {
+        match gl.GetError() {
+            0 => (),
+            0x0500 => println!("INVALID_ENUM: 0x0500"),
+            0x0501 => println!("INVALID_VALUE: 0x0501"),
+            0x0502 => println!("INVALID_OPERATION: 0x0502;"),
+            err @ _ => println!("UNKNOW ERR:0x{:x}", err),
+        };
+    }
 }
