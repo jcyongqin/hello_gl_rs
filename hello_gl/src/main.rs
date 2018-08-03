@@ -26,17 +26,11 @@ use std::path::Path;
 
 fn start(gl: RcGl) -> Program {
     unsafe {
+        gl.Enable(GL::DEPTH_TEST);
         gl.Enable(GL::BLEND);
         gl.BlendFunc(GL::SRC_ALPHA, GL::ONE_MINUS_SRC_ALPHA);
         gl.ClearColor(0.2, 0.2, 0.6, 1.0);
     }
-
-    let vec = vm::vec4::<f32>(1.0, 0.0, 0.0, 1.0);
-    let trans = Mat4::from_translation(vm::vec3(1.0, 0.0, 0.0));
-    let rotate = Mat4::from_angle_z(vm::Deg(90.0));
-    let scale = Mat4::from_scale(0.5);
-    let MVP = trans * rotate * scale;
-
 
     let vert_shader = Shader::new(gl.clone())
         .comp_vert_source(&load_file("./asset/triangle.vert").unwrap())
@@ -51,10 +45,30 @@ fn start(gl: RcGl) -> Program {
 
     let vertices: Vec<f32> = vec![
         // positions        // colors       // UV
-        -0.5, -0.5, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,   // bottom left
-        -0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,   // top left
-        0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0,     // top right
-        0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0,    // bottom right
+        -0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 0.0, 0.0,
+        0.5, -0.5, -0.5, 1.0, 0.0, 0.0, 1.0, 0.0,
+        0.5, 0.5, -0.5, 1.0, 0.0, 0.0, 1.0, 1.0,
+        -0.5, 0.5, -0.5, 1.0, 0.0, 0.0, 0.0, 1.0,
+        -0.5, -0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0,
+        0.5, -0.5, 0.5, 0.0, 1.0, 0.0, 1.0, 0.0,
+        0.5, 0.5, 0.5, 0.0, 1.0, 0.0, 1.0, 1.0,
+        -0.5, 0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 1.0,
+        -0.5, 0.5, 0.5, 0.0, 0.0, 1.0, 1.0, 0.0,
+        -0.5, 0.5, -0.5, 0.0, 0.0, 1.0, 1.0, 1.0,
+        -0.5, -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 1.0,
+        -0.5, -0.5, 0.5, 0.0, 0.0, 1.0, 0.0, 0.0,
+        0.5, 0.5, 0.5, 1.0, 1.0, 0.0, 1.0, 0.0,
+        0.5, 0.5, -0.5, 1.0, 1.0, 0.0, 1.0, 1.0,
+        0.5, -0.5, -0.5, 1.0, 1.0, 0.0, 0.0, 1.0,
+        0.5, -0.5, 0.5, 1.0, 1.0, 0.0, 0.0, 0.0,
+        -0.5, -0.5, -0.5, 0.0, 1.0, 1.0, 0.0, 1.0,
+        0.5, -0.5, -0.5, 0.0, 1.0, 1.0, 1.0, 1.0,
+        0.5, -0.5, 0.5, 0.0, 1.0, 1.0, 1.0, 0.0,
+        -0.5, -0.5, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0,
+        -0.5, 0.5, -0.5, 1.0, 1.0, 1.0, 0.0, 1.0,
+        0.5, 0.5, -0.5, 1.0, 1.0, 1.0, 1.0, 1.0,
+        0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 0.0,
+        -0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 0.0, 0.0,
     ];
     let vbo = Buffer::gen(gl.clone(), GL::ARRAY_BUFFER);
     vbo.bind();
@@ -75,8 +89,12 @@ fn start(gl: RcGl) -> Program {
 
     let indices: Vec<u32> = vec![
         // 注意索引从0开始!
-        0, 1, 3, // 第一个三角形
-        1, 2, 3,  // 第二个三角形
+        0, 1, 3, 1, 2, 3,   // 第一面
+        4, 5, 7, 5, 6, 7,   // 第二面
+        8, 9, 11, 9, 10, 11,
+        12, 13, 15, 13, 14, 15,
+        16, 17, 19, 17, 18, 19,
+        20, 21, 23, 21, 22, 23,
     ];
     let mut ebo: types::GLuint = 0;
     unsafe {
@@ -168,21 +186,35 @@ fn start(gl: RcGl) -> Program {
         );
     }
 
-    shader_program.set_used();
+
+    return shader_program;
+}
+
+
+fn update(gl: RcGl, shader: &Program, now: time::Instant) {
+    thread::sleep(time::Duration::from_millis(5));
+
+    let mut angle = now.elapsed().subsec_nanos() as f32 /4000000.0 % 720.0;
+
+    println!("{:?}", &angle);
+    let trans = Mat4::from_translation(vm::vec3(0.0, 0.0, 0.0));
+    let rotate_x = Mat4::from_angle_x(vm::Deg(45.0));
+    let rotate_y = Mat4::from_angle_y(vm::Deg(angle));
+    let rotate_z = Mat4::from_angle_z(vm::Deg(angle));
+    let scale = Mat4::from_scale(0.5);
+    let MVP = trans * rotate_x * rotate_y * rotate_z * scale;
+
+    shader.set_used();
     unsafe {
         let a: [[f32; 4]; 4] = MVP.into();
 
-        println!("{:?}", &a);
 
-        let mvp_matrix_loc = gl.GetUniformLocation(shader_program.id(), CString::new("mvp_matrix").unwrap().as_ptr());
-        println!("loc {:?},ref{:?}", mvp_matrix_loc, a.as_ptr());
+        let mvp_matrix_loc = gl.GetUniformLocation(shader.id(), CString::new("mvp_matrix").unwrap().as_ptr());
         print_gl_err(gl.clone(), "end MVP");
         gl.UniformMatrix4fv(mvp_matrix_loc, 1, GL::FALSE,
                             a.as_ptr() as *const types::GLfloat);
     }
-    return shader_program;
 }
-
 
 fn render(gl: RcGl, shader: &Program) {
     unsafe {
@@ -191,7 +223,7 @@ fn render(gl: RcGl, shader: &Program) {
         shader.set_used();
         gl.DrawElements(
             GL::TRIANGLES,
-            6,
+            36,
             GL::UNSIGNED_INT,
             0 as *const types::GLvoid,
         );
@@ -226,7 +258,7 @@ fn main() {
 //        v.gl_get_proc_address(s) as *const std::os::raw::c_void
 //    }).clone();
 
-
+    let now = time::Instant::now();
     let shader = start(gl.clone());
     print_gl_err(gl.clone(), "end start");
     'main: loop {
@@ -248,6 +280,7 @@ fn main() {
                 _ => {}
             }
         }
+        update(gl.clone(), &shader, now);
         render(gl.clone(), &shader);
         window.gl_swap_window();
     }
@@ -268,14 +301,14 @@ fn load_file(path: &str) -> Result<ffi::CString, String> {
 }
 
 fn print_gl_err(gl: RcGl, tag: &str) {
-    print!("{}", tag);
     unsafe {
         match gl.GetError() {
-            0 => (),
-            0x0500 => println!("INVALID_ENUM: 0x0500"),
-            0x0501 => println!("INVALID_VALUE: 0x0501"),
-            0x0502 => println!("INVALID_OPERATION: 0x0502;"),
-            err @ _ => println!("UNKNOW ERR:0x{:x}", err),
+            0 => return,
+            0x0500 => print!("INVALID_ENUM: 0x0500"),
+            0x0501 => print!("INVALID_VALUE: 0x0501"),
+            0x0502 => print!("INVALID_OPERATION: 0x0502;"),
+            err @ _ => print!("UNKNOW ERR:0x{:x}", err),
         };
+        println!("{}", tag);
     }
 }

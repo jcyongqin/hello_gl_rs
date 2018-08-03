@@ -10,8 +10,8 @@ gl_debug = ["libgl/debug"]
 
 [dependencies]
 libgl = { path = "../libgl" }
-image = "*"
-cgmath = "*"
+image = "0.19.0"
+cgmath = "0.16.1"
 
 [dependencies.sdl2]
 version = "0.31.0"
