@@ -5,4 +5,4 @@
 #glslangValidator.exe
 
 Cargo.lock
-/libgl/src/bindings.rs
+

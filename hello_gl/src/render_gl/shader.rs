@@ -4,14 +4,14 @@ use super::*;
 
 #[derive(Debug)]
 pub struct Shader {
-    gl: RcGl,
+    gl: Context,
     id: types::GLuint,
     kind: types::GLenum,
 }
 
 
 impl Shader {
-    pub fn new(gl: RcGl) -> Shader {
+    pub fn new(gl: Context) -> Shader {
         Shader { gl, id: 0, kind: 0 }
     }
     pub fn end(self) -> Shader { self }

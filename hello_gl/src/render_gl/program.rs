@@ -1,12 +1,13 @@
 use super::*;
+use render_gl::shader::Shader;
 
 pub struct Program {
-    gl: RcGl,
+    gl: Context,
     id: types::GLuint,
 }
 
 impl Program {
-    pub fn new(gl: RcGl) -> Program { Program { gl, id: 0 } }
+    pub fn new(gl: Context) -> Program { Program { gl, id: 0 } }
 
     pub fn link_shaders(mut self, shaders: &[Shader]) -> Result<Program, String> {
         let gl = self.gl.clone();
