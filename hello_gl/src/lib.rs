@@ -3,6 +3,9 @@ extern crate libgl;
 extern crate sdl2;
 extern crate image;
 extern crate cgmath as vm;
+#[macro_use]
+extern crate lazy_static;
+
 
 pub use vm::prelude::*;
 pub use render_gl::Context;
@@ -12,6 +15,7 @@ pub use image::{open, DynamicImage, RgbImage, GenericImage};
 pub mod render_gl;
 pub mod resources;
 pub mod game_obj;
+pub mod input;
 
 pub struct Application {
     app: sdl2::Sdl,
@@ -26,7 +30,6 @@ impl Application {
         let window = self.app.video()
             .unwrap()
             .window(name, width, height)
-            .resizable()
             .opengl()
             .build()
             .unwrap();
@@ -46,7 +49,7 @@ impl Application {
         let video = vwindow.subsystem();
         video.gl_attr().set_context_version(major, minor);
         let gl_context = vwindow.gl_create_context().unwrap();
-        vwindow.gl_make_current(&gl_context);
+        vwindow.gl_make_current(&gl_context).unwrap();
 
         let load_gl_fn = move |s| {
             video.gl_get_proc_address(s) as *const std::os::raw::c_void
@@ -58,8 +61,8 @@ impl Application {
 
 pub trait Behavior {
     fn start(ctx: Context) -> Self;
-    fn update(&mut self, ctx: Context){}
-    fn render(&mut self, ctx: Context){}
+    fn update(&mut self, ctx: Context) {}
+    fn render(&mut self, ctx: Context) {}
 }
 
 

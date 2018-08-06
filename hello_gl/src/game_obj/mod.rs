@@ -200,11 +200,11 @@ impl Behavior for GameObject {
         let rotate_y = Mat4::from_angle_y(vm::Deg(angle));
         let rotate_z = Mat4::from_angle_z(vm::Deg(angle));
         let scale = Mat4::from_scale(0.5);
-        let MVP = trans * rotate_x * rotate_y * rotate_z * scale;
+        let mvp = trans * rotate_x * rotate_y * rotate_z * scale;
 
         self.shader_prog.set_used();
         unsafe {
-            let a: [[f32; 4]; 4] = MVP.into();
+            let a: [[f32; 4]; 4] = mvp.into();
 
 
             let mvp_matrix_loc = ctx.GetUniformLocation(self.shader_prog.id(), CString::new("mvp_matrix").unwrap().as_ptr());

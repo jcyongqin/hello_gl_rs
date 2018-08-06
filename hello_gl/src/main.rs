@@ -1,18 +1,6 @@
 extern crate hello_gl;
 
-
 use hello_gl::*;
-use hello_gl::render_gl::{
-    GL,
-    Context,
-    shader::Shader,
-    program::Program,
-    buffer::Buffer,
-    types,
-
-};
-
-use std::*;
 use hello_gl::Behavior;
 use hello_gl::game_obj::*;
 
@@ -31,15 +19,7 @@ fn main() {
                     break 'main,
                 event::Event::KeyDown { scancode, .. } =>
                     if scancode.unwrap() == keyboard::Scancode::Escape { break 'main; }
-                event::Event::Window { win_event, .. } => unsafe {
-                    match win_event {
-                        event::WindowEvent::Resized(w, h) => {
-                            ctx.Viewport(0, 0, w, h);
-                            //println!("{},{}", w, h)
-                        }
-                        _ => ()
-                    }
-                }
+
                 _ => {}
             }
         }
