@@ -1,14 +1,17 @@
 /// #将主要逻辑写在mod中
+extern crate libgl;
 extern crate sdl2;
 extern crate image;
-extern crate libgl;
+extern crate cgmath as vm;
 
+pub use vm::prelude::*;
 pub use render_gl::Context;
-pub use sdl2::{EventPump, video::Window, video::GLContext, video::SwapInterval};
+pub use sdl2::{EventPump, video::Window, video::GLContext, video::SwapInterval, event, keyboard};
 pub use image::{open, DynamicImage, RgbImage, GenericImage};
 
 pub mod render_gl;
 pub mod resources;
+pub mod game_obj;
 
 pub struct Application {
     app: sdl2::Sdl,
@@ -53,6 +56,10 @@ impl Application {
     }
 }
 
-
+pub trait Behavior {
+    fn start(ctx: Context) -> Self;
+    fn update(&mut self, ctx: Context){}
+    fn render(&mut self, ctx: Context){}
+}
 
 
