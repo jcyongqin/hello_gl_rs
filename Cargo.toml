@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
-    "hello_gl",
     "libgl",
+    "hello_gl",
+    "hello_window",
 ]

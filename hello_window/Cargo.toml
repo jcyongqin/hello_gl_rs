@@ -1,0 +1,8 @@
+[package]
+name = "hello_window"
+version = "0.1.0"
+authors = ["yongqin wang <jcyongqin@outlook.com>"]
+
+[dependencies]
+libgl = { path = "../libgl" }
+glutin = "0.18.0"
