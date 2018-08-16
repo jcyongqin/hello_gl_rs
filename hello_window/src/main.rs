@@ -1,10 +1,10 @@
+extern crate hello_window;
 #[macro_use]
 extern crate glium;
 
-use glium::glutin::GlContext;
+use hello_window::*;
 
 fn main() {
-    use glium::{glutin, Surface};
     let mut events_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new();
     let context = glutin::ContextBuilder::new();
