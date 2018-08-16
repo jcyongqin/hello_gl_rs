@@ -3,8 +3,39 @@ extern crate hello_window;
 extern crate glium;
 
 use hello_window::*;
+use hello_window::world::*;
 
 fn main() {
+    let mut world = World::new();
+    world.register::<Position>();
+    world.register::<Velocity>();
+
+
+    // Only the second entity will get a position update,
+    // because the first one does not have a velocity.
+    world.create_entity().with(Position { x: 4.0, y: 7.0 }).build();
+    world
+        .create_entity()
+        .with(Position { x: 2.0, y: 5.0 })
+        .with(Velocity { x: 0.1, y: 0.2 })
+        .build();
+    world.add_resource(DeltaTime(0.05)); // Let's use some start value
+
+    let mut dispatcher = DispatcherBuilder::new()
+        .with(HelloWorld, "hello_world", &[])
+        .with(UpdatePos, "update_pos", &["hello_world"])
+        .build();
+
+    // loop0
+    dispatcher.dispatch(&mut world.res);
+    let mut delta = world.write_resource::<DeltaTime>();
+    *delta = DeltaTime(0.04);
+    // loop1
+    dispatcher.dispatch(&mut world.res);
+    world.maintain();
+}
+
+fn _main() {
     let mut events_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new();
     let context = glutin::ContextBuilder::new();

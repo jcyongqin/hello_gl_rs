@@ -1,3 +1,5 @@
+pub mod world;
+
 use std::ops::Drop;
 
 /// Scene Manager 目前强制加载内置Scene
